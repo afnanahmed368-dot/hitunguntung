@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HitungUntung - Kalkulator Untung & Biaya Admin Marketplace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hero-header { background: linear-gradient(135deg, #00b09b, #96c93d); color: white; border-radius: 0 0 20px 20px; }
+        .card-custom { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .stat-box { background: #eef9f6; border-left: 4px solid #00b09b; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="hero-header p-4 text-center mb-4">
+        <h1 class="fw-bold">HitungUntung 🇮🇩</h1>
+        <p class="mb-0">Kalkulator Potongan Admin Marketplace & Marjin Keuntungan Seller UMKM</p>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row g-4">
+            <!-- Form Input -->
+            <div class="col-md-6">
+                <div class="card card-custom p-4">
+                    <h5 class="fw-bold mb-3 text-secondary">Detail Produk & Platform</h5>
+                    <form id="calcForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pilih Marketplace</label>
+                            <select id="platform" class="form-select">
+                                <option value="shopee">Shopee Indonesia</option>
+                                <option value="tokopedia">Tokopedia</option>
+                                <option value="tiktok">TikTok Shop</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Harga Modal / HPP (Rp)</label>
+                            <input type="number" id="cost_price" class="form-control" placeholder="Contoh: 50000" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Harga Jual ke Pembeli (Rp)</label>
+                            <input type="number" id="sell_price" class="form-control" placeholder="Contoh: 85000" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_star">
+                            <label class="form-check-label" for="is_star">Seller Status (Star / Star+ / Power Merchant)</label>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="has_bebas_ongkir" checked>
+                            <label class="form-check-label" for="has_bebas_ongkir">Ikut Program Gratis Ongkir Extra</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Estimasi Resiko Retur COD (%)</label>
+                            <input type="number" id="cod_risk" class="form-control" value="5" min="0" max="50">
+                            <small class="text-muted">Rata-rata resiko retur paket gagal COD adalah 5%-10%.</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold" style="background-color: #00b09b; border:none;">Hitung Untung Bersih</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Output Results -->
+            <div class="col-md-6">
+                <div class="card card-custom p-4">
+                    <h5 class="fw-bold mb-3 text-secondary">Rincian Keuntungan</h5>
+                    
+                    <div id="results" class="d-none">
+                        <div class="stat-box p-3 mb-3">
+                            <span class="text-muted d-block fs-6">Keuntungan Bersih Per Unit</span>
+                            <h2 class="text-success fw-bold mb-0" id="res_net_profit">Rp 0</h2>
+                            <small class="text-muted">Marjin Bersih: <strong id="res_margin">0%</strong></small>
+                        </div>
+
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Harga Jual:</span>
+                                <strong id="res_sell_price">Rp 0</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between text-danger">
+                                <span>Potongan Admin (<span id="res_admin_rate">0%</span>):</span>
+                                <strong id="res_admin_fee">- Rp 0</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Modal HPP Produk:</span>
+                                <strong id="res_cost_price">Rp 0</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between text-warning">
+                                <span>Cadangan Resiko Retur COD:</span>
+                                <strong id="res_cod_buffer">Rp 0</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div id="placeholderText" class="text-center text-muted py-5">
+                        <p>Masukkan harga modal dan harga jual untuk melihat estimasi potongan dan profit bersih Anda.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('calcForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const payload = {
+                platform: document.getElementById('platform').value,
+                cost_price: document.getElementById('cost_price').value,
+                sell_price: document.getElementById('sell_price').value,
+                is_star: document.getElementById('is_star').checked,
+                has_bebas_ongkir: document.getElementById('has_bebas_ongkir').checked,
+                cod_risk_percent: document.getElementById('cod_risk').value
+            };
+
+            const response = await fetch('/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const res = await response.json();
+
+            document.getElementById('placeholderText').classList.add('d-none');
+            document.getElementById('results').classList.remove('d-none');
+
+            const fmt = (num) => 'Rp ' + Number(num).toLocaleString('id-ID');
+
+            document.getElementById('res_net_profit').innerText = fmt(res.net_profit);
+            document.getElementById('res_margin').innerText = res.margin_percentage + '%';
+            document.getElementById('res_sell_price').innerText = fmt(res.sell_price);
+            document.getElementById('res_admin_fee').innerText = '- ' + fmt(res.admin_fee_amount);
+            document.getElementById('res_admin_rate').innerText = res.admin_fee_rate_percent + '%';
+            document.getElementById('res_cost_price').innerText = fmt(res.cost_price);
+            document.getElementById('res_cod_buffer').innerText = fmt(res.cod_loss_buffer);
+        });
+    </script>
+</body>
+</html>
